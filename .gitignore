@@ -1,2 +1,10 @@
 *.vscode
 .env
+interviewer_chatbot/venv/
+interviewer_chatbot/__pycache__/
+interviewer_chatbot/.ipynb_checkpoints/
+interviewer_chatbot/lg-ev1
+*.pyc
+*.pyo
+**/__init__.py
+.ipynb_checkpoints/
