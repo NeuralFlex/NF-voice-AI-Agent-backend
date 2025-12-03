@@ -66,15 +66,14 @@ class LangGraphLLM(LLMAdapter):
         )
         response = result.get("response", str(result))
 
-        # Yield **plain string** chunks, one at a time
+        # Always yield a proper async generator of strings
         async def generator():
-            # If response is a list, join to single string
             if isinstance(response, list):
                 yield " ".join(str(r) for r in response)
             else:
                 yield str(response)
 
-        yield generator()  # yield async generator instance
+        yield generator()
 
 
 # -------------------------
@@ -88,19 +87,24 @@ class VoiceAgent(Agent):
         self._workflow_llm = LangGraphLLM(create_workflow())
 
     async def on_user_turn_completed(self, turn_ctx, new_message):
-        # Optional filler response
+        # -----------------
+        # Filler response
+        # -----------------
         async def filler_gen():
             yield "Hmm... let me think..."
 
-        self.session.say(filler_gen(), add_to_chat_ctx=False)
+        await self.session.say(filler_gen(), add_to_chat_ctx=False)
 
+        # -----------------
         # Main response
+        # -----------------
         async with self._workflow_llm.chat(chat_ctx=turn_ctx) as gen:
-            async for chunk in gen:  # chunk is now always a string
-                await self.session.say(
-                    lambda: asyncio.as_completed([asyncio.sleep(0), chunk]),
-                    add_to_chat_ctx=True,
-                )
+            async for chunk in gen:  # chunk is a string
+                # Wrap string into proper async generator
+                async def chunk_gen(text):
+                    yield text
+
+                await self.session.say(chunk_gen(chunk), add_to_chat_ctx=True)
 
 
 # -------------------------
