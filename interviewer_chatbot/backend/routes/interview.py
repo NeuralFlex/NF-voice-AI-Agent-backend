@@ -2,12 +2,18 @@ from fastapi import APIRouter, Form, File, UploadFile, HTTPException
 from pydantic import BaseModel
 import uuid
 from typing import Optional
-
+from livekit.api.access_token import AccessToken, VideoGrants
+import os
 from utils.cv_tools import extract_text_from_pdf_bytes, chunk_cv_text
 from services.vectorstore_service import create_vectorstore, delete_vectorstore
 from graph.graph import compiled_graph
+from config.settings import settings
+
 
 router = APIRouter(tags=["Interview"])
+LIVEKIT_API_KEY = settings.livekit_api_key
+LIVEKIT_API_SECRET = settings.livekit_api_secret
+LIVEKIT_URL = settings.livekit_url
 
 
 class ContinueRequest(BaseModel):
@@ -170,3 +176,30 @@ async def continue_interview(req: ContinueRequest):
         raise HTTPException(
             status_code=500, detail=f"Failed to continue interview: {e}"
         )
+
+
+class JoinRequest(BaseModel):
+    username: str
+    room_name: str
+
+
+@router.post("/join")
+def join_meeting(req: JoinRequest):
+    """
+    Generates a LiveKit access token for a user to join a room.
+    """
+    try:
+        # Create token
+        token = AccessToken(api_key=LIVEKIT_API_KEY, api_secret=LIVEKIT_API_SECRET)
+
+        # Set identity
+        token = token.with_identity(req.username)
+
+        # Grant permission to join the room
+        token = token.with_grants(VideoGrants(room_join=True, room=req.room_name))
+
+        # Return JWT and LiveKit URL
+        return {"token": token.to_jwt(), "url": LIVEKIT_URL}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate token: {e}")

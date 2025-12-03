@@ -5,6 +5,9 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY")
+LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET")
+LIVEKIT_URL = os.getenv("LIVEKIT_URL")
 DB_URI = os.getenv(
     "DATABASE_URL",
     "postgresql://interview_user:postgres@localhost:5432/interview_db",
@@ -34,6 +37,9 @@ class Settings:
         self.chroma_api_key = CHROMA_API_KEY
         self.chroma_tenant = CHROMA_TENANT
         self.chroma_database = CHROMA_DATABASE
+        self.livekit_api_key = LIVEKIT_API_KEY
+        self.livekit_url = LIVEKIT_URL
+        self.livekit_api_secret = LIVEKIT_API_SECRET
 
 
 settings = Settings()
